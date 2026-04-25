@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>커플 가계부 / カップル家計簿</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --p1: #E1F5EE; --p2: #5DCAA5; --p3: #1D9E75; --p4: #0F6E56;
+    --s1: #FAEEDA; --s2: #EF9F27; --s3: #BA7517;
+    --r1: #FCEBEB; --r2: #E24B4A;
+    --bg: #ffffff; --bg2: #f5f5f3; --bg3: #ebebea;
+    --t1: #1a1a1a; --t2: #6b6b6b; --t3: #a8a8a6;
+    --br: rgba(0,0,0,0.12);
+    --brad-md: 8px; --brad-lg: 12px; --brad-xl: 16px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', 'Noto Sans JP', sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1e; --bg2: #2c2c2e; --bg3: #3a3a3c;
+      --t1: #f2f2f7; --t2: #aeaeb2; --t3: #636366;
+      --br: rgba(255,255,255,0.12);
+      --p1: #0a2e22; --p2: #1a6b50; --p3: #2db885; --p4: #6eddb5;
+      --s1: #2e1f00; --s2: #f0a830; --s3: #fcc975;
+      --r1: #2e0a0a; --r2: #ff6b6b;
+    }
+  }
+  body { font-family: var(--font); background: var(--bg3); display: flex; justify-content: center; min-height: 100vh; }
+  .app { width: 100%; max-width: 430px; min-height: 100vh; background: var(--bg3); display: flex; flex-direction: column; }
+
+  /* Lang toggle */
+  .lang-bar { background: var(--bg); border-bottom: 0.5px solid var(--br); padding: 8px 16px; display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+  .lang-toggle { display: flex; background: var(--bg2); border-radius: 20px; padding: 3px; gap: 2px; }
+  .lang-btn { padding: 5px 14px; border-radius: 16px; border: none; background: none; font-size: 12px; font-family: var(--font); cursor: pointer; color: var(--t2); transition: all 0.15s; font-weight: 500; }
+  .lang-btn.active { background: var(--bg); color: var(--t1); font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+  .nav { display: flex; background: var(--bg); border-top: 0.5px solid var(--br); position: fixed; bottom: 0; width: 100%; max-width: 430px; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+  .nav-btn { flex: 1; padding: 10px 4px 8px; background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--t3); font-size: 10px; font-family: var(--font); transition: color 0.15s; }
+  .nav-btn.active { color: var(--p3); }
+  .nav-btn svg { width: 22px; height: 22px; }
+  .screens { flex: 1; overflow-y: auto; padding-bottom: 70px; }
+  .screen { display: none; padding: 16px; }
+  .screen.active { display: block; }
+
+  .qa-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-top: 8px; }
+  .qa-header h2 { font-size: 20px; font-weight: 600; color: var(--t1); }
+  .who-toggle { display: flex; background: var(--bg2); border-radius: 20px; padding: 3px; gap: 2px; }
+  .who-btn { padding: 7px 16px; border-radius: 16px; border: none; background: none; font-size: 13px; font-family: var(--font); cursor: pointer; color: var(--t2); transition: all 0.15s; }
+  .who-btn.active { background: var(--bg); color: var(--t1); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+  .date-row { display: flex; gap: 8px; margin-bottom: 14px; align-items: center; }
+  .date-label { font-size: 13px; color: var(--t2); flex-shrink: 0; }
+  .date-btn { flex: 1; padding: 12px 14px; background: var(--bg2); border: 0.5px solid var(--br); border-radius: var(--brad-md); font-size: 14px; font-family: var(--font); color: var(--t1); cursor: pointer; text-align: left; display: flex; align-items: center; justify-content: space-between; -webkit-tap-highlight-color: transparent; }
+  .date-btn:active { background: var(--bg3); }
+  .today-btn { padding: 12px 14px; background: var(--bg2); border: 0.5px solid var(--br); border-radius: var(--brad-md); font-size: 12px; font-family: var(--font); color: var(--p3); font-weight: 600; cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+
+  .amount-native-wrap { position: relative; margin-bottom: 14px; }
+  .amount-currency { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--t2); pointer-events: none; font-weight: 500; }
+  .amount-native { width: 100%; padding: 15px 14px 15px 34px; border: 0.5px solid var(--br); border-radius: var(--brad-md); background: var(--bg2); font-size: 24px; font-family: var(--font); font-weight: 600; color: var(--t1); outline: none; -webkit-appearance: none; appearance: none; }
+  .amount-native:focus { border-color: var(--p2); background: var(--bg); }
+  .amount-native::placeholder { color: var(--t3); font-weight: 400; font-size: 16px; }
+  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .cats { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .cat-chip { padding: 8px 13px; border-radius: 20px; border: 0.5px solid var(--br); background: var(--bg2); font-size: 13px; color: var(--t2); cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: var(--font); }
+  .cat-chip.active { background: var(--p1); border-color: var(--p2); color: var(--p4); font-weight: 600; }
+  .memo-input { width: 100%; padding: 12px 14px; border: 0.5px solid var(--br); border-radius: var(--brad-md); background: var(--bg2); font-size: 14px; font-family: var(--font); color: var(--t1); margin-bottom: 14px; outline: none; }
+  .memo-input:focus { border-color: var(--p2); }
+  .add-btn { width: 100%; padding: 15px; background: var(--p3); border: none; border-radius: var(--brad-lg); color: white; font-size: 16px; font-weight: 600; font-family: var(--font); cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
+  .add-btn:active { background: var(--p4); }
+
+  /* Calendar */
+  .cal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.22s; }
+  .cal-overlay.open { opacity: 1; pointer-events: all; }
+  .cal-sheet { background: var(--bg); border-radius: 20px 20px 0 0; width: 100%; max-width: 430px; padding: 20px 16px calc(24px + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform 0.28s cubic-bezier(0.32,0.72,0,1); }
+  .cal-overlay.open .cal-sheet { transform: translateY(0); }
+  .cal-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .cal-nav { display: flex; gap: 8px; align-items: center; }
+  .cal-nav-btn { background: var(--bg2); border: none; border-radius: 8px; padding: 7px 12px; font-size: 16px; cursor: pointer; color: var(--t1); -webkit-tap-highlight-color: transparent; }
+  .cal-month-label { font-size: 16px; font-weight: 600; color: var(--t1); min-width: 110px; text-align: center; }
+  .cal-close { background: var(--bg2); border: none; border-radius: 8px; padding: 7px 14px; font-size: 13px; font-family: var(--font); color: var(--t2); cursor: pointer; }
+  .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
+  .cal-wd { text-align: center; font-size: 11px; color: var(--t3); font-weight: 600; padding: 6px 0; }
+  .cal-wd:first-child { color: #E24B4A; }
+  .cal-wd:last-child { color: #378ADD; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 15px; border-radius: 50%; cursor: pointer; border: none; background: none; font-family: var(--font); color: var(--t1); -webkit-tap-highlight-color: transparent; transition: background 0.1s; }
+  .cal-day:active:not(.empty) { background: var(--bg2); }
+  .cal-day.empty { cursor: default; pointer-events: none; }
+  .cal-day.today { font-weight: 700; color: var(--p3); }
+  .cal-day.selected { background: var(--p3) !important; color: white !important; font-weight: 600; }
+  .cal-day.sunday { color: #E24B4A; }
+  .cal-day.saturday { color: #378ADD; }
+  .cal-day.selected.sunday, .cal-day.selected.saturday { color: white !important; }
+  .cal-confirm { width: 100%; margin-top: 14px; padding: 14px; background: var(--p3); border: none; border-radius: var(--brad-lg); color: white; font-size: 15px; font-weight: 600; font-family: var(--font); cursor: pointer; }
+
+  /* Dashboard */
+  .month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-top: 8px; }
+  .month-nav h2 { font-size: 17px; font-weight: 600; color: var(--t1); }
+  .mnav-btn { background: var(--bg); border: 0.5px solid var(--br); border-radius: var(--brad-md); padding: 8px 14px; cursor: pointer; color: var(--t2); font-family: var(--font); font-size: 13px; }
+  .summary-card { background: var(--bg); border-radius: var(--brad-xl); padding: 18px; margin-bottom: 12px; border: 0.5px solid var(--br); }
+  .balance-row { display: flex; justify-content: space-between; align-items: center; }
+  .person-stat { text-align: center; flex: 1; }
+  .person-name { font-size: 12px; color: var(--t2); margin-bottom: 4px; }
+  .person-amount { font-size: 22px; font-weight: 600; color: var(--t1); letter-spacing: -0.5px; }
+  .person-dot { width: 8px; height: 8px; border-radius: 50%; margin: 0 auto 5px; }
+  .dot-a { background: var(--p3); }
+  .dot-b { background: var(--s2); }
+  .divider-v { width: 0.5px; background: var(--br); height: 55px; }
+  .settle-box { margin-top: 14px; padding-top: 14px; border-top: 0.5px solid var(--br); text-align: center; }
+  .settle-label { font-size: 12px; color: var(--t3); margin-bottom: 5px; }
+  .settle-amount { font-size: 15px; font-weight: 600; }
+  .settle-amount.positive { color: var(--p3); }
+  .settle-amount.negative { color: var(--r2); }
+  .bar-section { background: var(--bg); border-radius: var(--brad-lg); padding: 14px; margin-bottom: 12px; border: 0.5px solid var(--br); }
+  .bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--t2); margin-bottom: 8px; }
+  .bar-track { height: 10px; background: var(--bg2); border-radius: 5px; overflow: hidden; display: flex; }
+  .bar-fill-a { background: var(--p3); border-radius: 5px; transition: width 0.5s ease; }
+  .bar-fill-b { background: var(--s2); border-radius: 5px; transition: width 0.5s ease; }
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .metric { background: var(--bg); border-radius: var(--brad-lg); padding: 14px; border: 0.5px solid var(--br); }
+  .metric-label { font-size: 11px; color: var(--t3); margin-bottom: 5px; }
+  .metric-val { font-size: 18px; font-weight: 600; color: var(--t1); letter-spacing: -0.5px; }
+  .section-title { font-size: 13px; color: var(--t2); font-weight: 600; margin-bottom: 8px; }
+  .cat-breakdown { background: var(--bg); border-radius: var(--brad-lg); border: 0.5px solid var(--br); overflow: hidden; margin-bottom: 12px; }
+  .cat-row { display: flex; align-items: center; padding: 12px 14px; border-bottom: 0.5px solid var(--br); gap: 10px; }
+  .cat-row:last-child { border-bottom: none; }
+  .cat-bar-wrap { width: 60px; height: 4px; background: var(--bg2); border-radius: 2px; overflow: hidden; }
+  .cat-bar-fill { height: 4px; background: var(--p3); border-radius: 2px; }
+  .cat-amt { font-size: 13px; font-weight: 600; color: var(--t1); min-width: 70px; text-align: right; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--t3); font-size: 14px; line-height: 1.8; }
+
+  /* History */
+  .hist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-top: 8px; }
+  .hist-header h2 { font-size: 20px; font-weight: 600; color: var(--t1); }
+  .filter-bar { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-chip { padding: 7px 13px; border-radius: 20px; border: 0.5px solid var(--br); background: var(--bg2); font-size: 12px; color: var(--t2); cursor: pointer; white-space: nowrap; font-family: var(--font); transition: all 0.15s; }
+  .filter-chip.active { background: var(--p1); border-color: var(--p2); color: var(--p4); font-weight: 600; }
+  .tx-list { display: flex; flex-direction: column; gap: 6px; }
+  .tx-item { background: var(--bg); border: 0.5px solid var(--br); border-radius: var(--brad-lg); padding: 12px 14px; display: flex; align-items: center; gap: 12px; -webkit-tap-highlight-color: transparent; }
+  .tx-item:active { background: var(--bg2); }
+  .tx-icon { width: 40px; height: 40px; border-radius: var(--brad-md); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .tx-body { flex: 1; min-width: 0; }
+  .tx-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
+  .tx-memo { font-size: 14px; color: var(--t1); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+  .tx-amount { font-size: 14px; font-weight: 600; color: var(--t1); }
+  .tx-bot { display: flex; justify-content: space-between; align-items: center; }
+  .tx-meta { font-size: 11px; color: var(--t3); }
+  .tx-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .badge-a { background: var(--p1); color: var(--p4); }
+  .badge-b { background: var(--s1); color: var(--s3); }
+  .date-header { font-size: 12px; color: var(--t3); font-weight: 600; margin: 14px 0 6px; padding-left: 2px; }
+
+  /* Settings */
+  .settings-header { padding-top: 8px; margin-bottom: 20px; }
+  .settings-header h2 { font-size: 20px; font-weight: 600; color: var(--t1); }
+  .settings-section { margin-bottom: 20px; }
+  .settings-title { font-size: 11px; color: var(--t3); font-weight: 600; margin-bottom: 8px; padding-left: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .settings-card { background: var(--bg); border: 0.5px solid var(--br); border-radius: var(--brad-lg); overflow: hidden; }
+  .settings-row { display: flex; align-items: center; padding: 13px 14px; border-bottom: 0.5px solid var(--br); gap: 12px; }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-icon { width: 34px; height: 34px; border-radius: var(--brad-md); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .icon-green { background: var(--p1); }
+  .icon-amber { background: var(--s1); }
+  .icon-blue { background: #E6F1FB; }
+  .settings-label { flex: 1; font-size: 14px; color: var(--t1); }
+  .settings-value { font-size: 13px; color: var(--t2); }
+  .settings-input { border: none; background: none; font-size: 14px; font-family: var(--font); color: var(--t1); text-align: right; width: 130px; outline: none; }
+  .cat-manage { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px; }
+  .cat-tag { display: flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 16px; border: 0.5px solid var(--br); background: var(--bg2); font-size: 12px; color: var(--t1); }
+  .cat-del { background: none; border: none; cursor: pointer; color: var(--t3); font-size: 16px; line-height: 1; padding: 0; }
+  .add-cat-row { display: flex; gap: 8px; padding: 0 14px 12px; }
+  .add-cat-emoji { width: 42px; padding: 8px; border: 0.5px solid var(--br); border-radius: var(--brad-md); background: var(--bg2); font-size: 16px; text-align: center; font-family: var(--font); outline: none; }
+  .add-cat-input { flex: 1; padding: 8px 12px; border: 0.5px solid var(--br); border-radius: var(--brad-md); background: var(--bg2); font-size: 13px; font-family: var(--font); color: var(--t1); outline: none; }
+  .add-cat-btn { padding: 8px 14px; background: var(--p3); border: none; border-radius: var(--brad-md); color: white; font-size: 13px; font-family: var(--font); cursor: pointer; font-weight: 600; }
+  .danger-label { color: var(--r2) !important; cursor: pointer; }
+  .toast { position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--t1); color: var(--bg); padding: 10px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: all 0.3s; z-index: 1000; white-space: nowrap; font-family: var(--font); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Lang bar -->
+  <div class="lang-bar">
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="lang-ko" onclick="setLang('ko')">한국어</button>
+      <button class="lang-btn" id="lang-ja" onclick="setLang('ja')">日本語</button>
+    </div>
+  </div>
+
+  <div class="screens">
+    <!-- ADD -->
+    <div id="screen-add" class="screen active">
+      <div class="qa-header">
+        <h2 data-i18n="addTitle">지출 추가</h2>
+        <div class="who-toggle">
+          <button class="who-btn active" onclick="setWho('A')" id="who-a">나</button>
+          <button class="who-btn" onclick="setWho('B')" id="who-b">파트너</button>
+        </div>
+      </div>
+      <div class="date-row">
+        <span class="date-label" data-i18n="dateLabel">📅 날짜</span>
+        <button class="date-btn" onclick="openCal()" id="date-display-btn">
+          <span id="date-display-text"></span>
+          <span style="color:var(--t3);font-size:16px;">›</span>
+        </button>
+        <button class="today-btn" onclick="setToday()" data-i18n="todayBtn">오늘</button>
+      </div>
+      <div class="amount-native-wrap">
+        <span class="amount-currency" id="currency-symbol">₩</span>
+        <input class="amount-native" id="amount-native" type="number" inputmode="numeric" min="0" max="999999999">
+      </div>
+      <div class="cats" id="cat-selector"></div>
+      <input class="memo-input" id="memo-input" maxlength="30">
+      <button class="add-btn" onclick="addTransaction()" data-i18n="addBtn">추가하기</button>
+    </div>
+
+    <!-- CALENDAR MODAL -->
+    <div class="cal-overlay" id="cal-overlay" onclick="calOverlayClick(event)">
+      <div class="cal-sheet" id="cal-sheet">
+        <div class="cal-top">
+          <div class="cal-nav">
+            <button class="cal-nav-btn" onclick="calMove(-1)">‹</button>
+            <span class="cal-month-label" id="cal-title"></span>
+            <button class="cal-nav-btn" onclick="calMove(1)">›</button>
+          </div>
+          <button class="cal-close" onclick="closeCal()" data-i18n="calClose">닫기</button>
+        </div>
+        <div class="cal-weekdays" id="cal-weekdays"></div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <button class="cal-confirm" onclick="confirmDate()" data-i18n="calConfirm">선택 완료</button>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="screen-dash" class="screen">
+      <div class="month-nav">
+        <button class="mnav-btn" onclick="changeMonth(-1)" data-i18n="prevMonth">← 이전</button>
+        <h2 id="month-title"></h2>
+        <button class="mnav-btn" onclick="changeMonth(1)" data-i18n="nextMonth">다음 →</button>
+      </div>
+      <div id="dash-content"></div>
+    </div>
+
+    <!-- HISTORY -->
+    <div id="screen-hist" class="screen">
+      <div class="hist-header"><h2 data-i18n="histTitle">거래 내역</h2></div>
+      <div class="filter-bar" id="filter-bar"></div>
+      <div class="tx-list" id="tx-list"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="screen-settings" class="screen">
+      <div class="settings-header"><h2 data-i18n="settingsTitle">설정</h2></div>
+      <div class="settings-section">
+        <div class="settings-title" data-i18n="nickSection">닉네임</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-icon icon-green">👤</div>
+            <div class="settings-label" data-i18n="myNick">내 닉네임</div>
+            <input class="settings-input" id="nick-a" value="나" onchange="saveNick()">
+          </div>
+          <div class="settings-row">
+            <div class="settings-icon icon-amber">👤</div>
+            <div class="settings-label" data-i18n="partnerNick">상대방 닉네임</div>
+            <input class="settings-input" id="nick-b" value="파트너" onchange="saveNick()">
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title" data-i18n="catSection">카테고리 관리</div>
+        <div class="settings-card">
+          <div class="cat-manage" id="cat-manage"></div>
+          <div class="add-cat-row">
+            <input class="add-cat-emoji" id="new-cat-emoji" placeholder="🏷" maxlength="2">
+            <input class="add-cat-input" id="new-cat-input" maxlength="12">
+            <button class="add-cat-btn" onclick="addCat()" data-i18n="catAddBtn">추가</button>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title" data-i18n="dataSection">데이터</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-icon icon-blue">📊</div>
+            <div class="settings-label" data-i18n="txCount">저장된 거래</div>
+            <span class="settings-value" id="tx-count">0건</span>
+          </div>
+          <div class="settings-row">
+            <div class="settings-icon" style="background:var(--r1)">🗑</div>
+            <div class="settings-label danger-label" onclick="clearData()" data-i18n="clearData">모든 데이터 초기화</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showScreen('add')" id="nav-add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <span data-i18n="navAdd">추가</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('dash')" id="nav-dash">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span data-i18n="navDash">대시보드</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('hist')" id="nav-hist">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>
+      <span data-i18n="navHist">내역</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('settings')" id="nav-settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span data-i18n="navSettings">설정</span>
+    </button>
+  </nav>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── i18n ──────────────────────────────────────────────
+const I18N = {
+  ko: {
+    addTitle: '지출 추가', dateLabel: '📅 날짜', todayBtn: '오늘',
+    amountPlaceholder: '금액 입력', memoPH: '메모 (선택사항)',
+    addBtn: '추가하기', calClose: '닫기', calConfirm: '선택 완료',
+    prevMonth: '← 이전', nextMonth: '다음 →',
+    histTitle: '거래 내역', settingsTitle: '설정',
+    nickSection: '닉네임', myNick: '내 닉네임', partnerNick: '상대방 닉네임',
+    catSection: '카테고리 관리', catAddBtn: '추가', catInputPH: '카테고리 이름',
+    dataSection: '데이터', txCountLabel: '저장된 거래', clearData: '모든 데이터 초기화',
+    navAdd: '추가', navDash: '대시보드', navHist: '내역', navSettings: '설정',
+    currency: '₩',
+    months: ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
+    weekdays: ['일','월','화','수','목','금','토'],
+    today: '오늘', yesterday: '어제', tomorrow: '내일',
+    paidBy: (n) => `${n}가 낸 금액`,
+    settleNone: '정산 없음 (균등 분담 완료)',
+    settleAtoB: (a, b, amt) => `${a}가 ${b}에게 ${amt} 보내기`,
+    settleBtoA: (a, b, amt) => `${b}가 ${a}에게 ${amt} 보내기`,
+    settleResult: '이번 달 정산 결과',
+    totalSpend: '이달 총 지출', perPerson: '1인 부담액',
+    txCountStat: '거래 건수', avgPerTx: '건당 평균',
+    catBreakdown: '카테고리별 지출',
+    emptyDash: '이번 달 거래 내역이 없어요\n지출 추가 탭에서 내역을 추가해보세요 ✍️',
+    emptyHist: '거래 내역이 없어요\n첫 지출을 추가해보세요! 💸',
+    filterAll: '전체',
+    toastAdded: (amt) => `${amt} 추가됨 ✓`,
+    toastNoAmt: '금액을 입력해주세요',
+    toastCatMin: '카테고리는 최소 1개 필요해요',
+    toastCatAdded: '카테고리가 추가됐어요',
+    toastCleared: '데이터가 초기화됐어요',
+    confirmClear: '정말 모든 거래 내역을 삭제할까요?\n이 작업은 되돌릴 수 없어요.',
+    txCountSuffix: '건',
+  },
+  ja: {
+    addTitle: '支出を追加', dateLabel: '📅 日付', todayBtn: '今日',
+    amountPlaceholder: '金額を入力', memoPH: 'メモ（任意）',
+    addBtn: '追加する', calClose: '閉じる', calConfirm: '選択完了',
+    prevMonth: '← 前月', nextMonth: '翌月 →',
+    histTitle: '取引履歴', settingsTitle: '設定',
+    nickSection: 'ニックネーム', myNick: '自分のニックネーム', partnerNick: '相手のニックネーム',
+    catSection: 'カテゴリー管理', catAddBtn: '追加', catInputPH: 'カテゴリー名',
+    dataSection: 'データ', txCountLabel: '保存された取引', clearData: '全データを初期化',
+    navAdd: '追加', navDash: 'ダッシュボード', navHist: '履歴', navSettings: '設定',
+    currency: '¥',
+    months: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+    weekdays: ['日','月','火','水','木','金','土'],
+    today: '今日', yesterday: '昨日', tomorrow: '明日',
+    paidBy: (n) => `${n}が支払った金額`,
+    settleNone: '精算なし（均等分担完了）',
+    settleAtoB: (a, b, amt) => `${a}が${b}に${amt}を送る`,
+    settleBtoA: (a, b, amt) => `${b}が${a}に${amt}を送る`,
+    settleResult: '今月の精算結果',
+    totalSpend: '今月の総支出', perPerson: '1人あたりの負担',
+    txCountStat: '取引件数', avgPerTx: '1件あたり平均',
+    catBreakdown: 'カテゴリー別支出',
+    emptyDash: '今月の取引はまだありません\n支出追加タブから入力してください ✍️',
+    emptyHist: '取引履歴がありません\n最初の支出を追加してみましょう！ 💸',
+    filterAll: '全て',
+    toastAdded: (amt) => `${amt} 追加しました ✓`,
+    toastNoAmt: '金額を入力してください',
+    toastCatMin: 'カテゴリーは最低1つ必要です',
+    toastCatAdded: 'カテゴリーを追加しました',
+    toastCleared: 'データを初期化しました',
+    confirmClear: '本当に全ての取引履歴を削除しますか？\nこの操作は元に戻せません。',
+    txCountSuffix: '件',
+  }
+};
+
+const CATS_KO = [
+  {id:'restaurant', label:'🍽 외식비',    icon:'🍽', color:'#E1F5EE'},
+  {id:'grocery',    label:'🛒 장보기',     icon:'🛒', color:'#EAF3DE'},
+  {id:'transport',  label:'🚇 교통비',     icon:'🚇', color:'#E6F1FB'},
+  {id:'util',       label:'💡 공과금/월세', icon:'💡', color:'#FAEEDA'},
+  {id:'ott',        label:'📺 OTT',        icon:'📺', color:'#EEEDFE'},
+  {id:'travel',     label:'✈️ 여행비',     icon:'✈️', color:'#E1F8FF'},
+  {id:'health',     label:'💊 의료',       icon:'💊', color:'#FBEAF0'},
+  {id:'etc',        label:'📦 기타',       icon:'📦', color:'#F1EFE8'},
+];
+const CATS_JA = [
+  {id:'restaurant', label:'🍽 外食費',     icon:'🍽', color:'#E1F5EE'},
+  {id:'grocery',    label:'🛒 食料品',     icon:'🛒', color:'#EAF3DE'},
+  {id:'transport',  label:'🚇 交通費',     icon:'🚇', color:'#E6F1FB'},
+  {id:'util',       label:'💡 光熱費/家賃', icon:'💡', color:'#FAEEDA'},
+  {id:'ott',        label:'📺 OTT',        icon:'📺', color:'#EEEDFE'},
+  {id:'travel',     label:'✈️ 旅行費',     icon:'✈️', color:'#E1F8FF'},
+  {id:'health',     label:'💊 医療費',     icon:'💊', color:'#FBEAF0'},
+  {id:'etc',        label:'📦 その他',     icon:'📦', color:'#F1EFE8'},
+];
+
+const todayD = new Date();
+const todayNorm = new Date(todayD.getFullYear(), todayD.getMonth(), todayD.getDate());
+
+let state = {
+  lang: 'ko',
+  txs: [],
+  catsKo: JSON.parse(JSON.stringify(CATS_KO)),
+  catsJa: JSON.parse(JSON.stringify(CATS_JA)),
+  nickA: '', nickB: '',
+  currentWho: 'A',
+  currentCat: 'restaurant',
+  selectedDate: new Date(todayNorm),
+  viewMonth: todayD.getMonth(),
+  viewYear: todayD.getFullYear(),
+  histFilter: 'all',
+  calYear: todayD.getFullYear(),
+  calMonth: todayD.getMonth(),
+  calSelected: new Date(todayNorm),
+};
+
+function getCats() { return state.lang === 'ko' ? state.catsKo : state.catsJa; }
+function t(key) { return I18N[state.lang][key] || I18N['ko'][key] || key; }
+
+function save() {
+  try {
+    localStorage.setItem('couple_ledger_v4', JSON.stringify(state, (k,v) => v instanceof Date ? v.toISOString() : v));
+  } catch(e) {}
+}
+function load() {
+  try {
+    const d = localStorage.getItem('couple_ledger_v4');
+    if (d) {
+      const p = JSON.parse(d);
+      state = {...state, ...p};
+      state.selectedDate = new Date(state.selectedDate);
+      state.calSelected = new Date(state.calSelected);
+      if (!state.catsKo) state.catsKo = JSON.parse(JSON.stringify(CATS_KO));
+      if (!state.catsJa) state.catsJa = JSON.parse(JSON.stringify(CATS_JA));
+    }
+  } catch(e) {}
+}
+load();
+
+function fmt(n) {
+  const sym = t('currency');
+  return sym + Math.round(n).toLocaleString();
+}
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Language ───────────────────────────────────────────
+function setLang(lang) {
+  state.lang = lang;
+  document.getElementById('lang-ko').classList.toggle('active', lang==='ko');
+  document.getElementById('lang-ja').classList.toggle('active', lang==='ja');
+  applyI18n();
+  document.getElementById('currency-symbol').textContent = t('currency');
+  document.getElementById('amount-native').placeholder = t('amountPlaceholder');
+  document.getElementById('memo-input').placeholder = t('memoPH');
+  document.getElementById('new-cat-input').placeholder = t('catInputPH');
+  setWho(state.currentWho);
+  renderCatSelector();
+  updateDateDisplay();
+  renderCalWeekdays();
+  // re-render active screen
+  const screens = ['add','dash','hist','settings'];
+  screens.forEach(s => {
+    if (document.getElementById('screen-'+s).classList.contains('active')) {
+      if (s==='dash') renderDash();
+      if (s==='hist') renderHist();
+      if (s==='settings') renderSettings();
+    }
+  });
+  save();
+}
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const val = I18N[state.lang][key];
+    if (val && typeof val === 'string') el.textContent = val;
+  });
+  // tx count suffix
+  const cnt = document.getElementById('tx-count');
+  if (cnt) cnt.textContent = state.txs.length + t('txCountSuffix');
+}
+
+// ── Who ───────────────────────────────────────────────
+function setWho(w) {
+  state.currentWho = w;
+  document.getElementById('who-a').classList.toggle('active', w==='A');
+  document.getElementById('who-b').classList.toggle('active', w==='B');
+  document.getElementById('who-a').textContent = state.nickA || (state.lang==='ko'?'나':'自分');
+  document.getElementById('who-b').textContent = state.nickB || (state.lang==='ko'?'파트너':'パートナー');
+}
+
+// ── Date ──────────────────────────────────────────────
+function fmtDate(d) {
+  const diff = (todayNorm - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 86400000;
+  if (diff === 0) return t('today');
+  if (diff === 1) return t('yesterday');
+  if (diff === -1) return t('tomorrow');
+  if (state.lang === 'ja') return `${d.getMonth()+1}月${d.getDate()}日`;
+  return `${d.getMonth()+1}월 ${d.getDate()}일`;
+}
+function updateDateDisplay() {
+  document.getElementById('date-display-text').textContent = fmtDate(state.selectedDate);
+}
+function setToday() {
+  state.selectedDate = new Date(todayNorm);
+  state.calSelected = new Date(todayNorm);
+  state.calYear = todayD.getFullYear();
+  state.calMonth = todayD.getMonth();
+  updateDateDisplay();
+}
+
+// ── Calendar ──────────────────────────────────────────
+function openCal() {
+  state.calSelected = new Date(state.selectedDate);
+  state.calYear = state.selectedDate.getFullYear();
+  state.calMonth = state.selectedDate.getMonth();
+  renderCalWeekdays();
+  renderCal();
+  document.getElementById('cal-overlay').classList.add('open');
+}
+function closeCal() { document.getElementById('cal-overlay').classList.remove('open'); }
+function calOverlayClick(e) { if (e.target===document.getElementById('cal-overlay')) closeCal(); }
+function confirmDate() {
+  state.selectedDate = new Date(state.calSelected);
+  updateDateDisplay();
+  closeCal();
+}
+function calMove(d) {
+  state.calMonth += d;
+  if (state.calMonth>11){state.calMonth=0;state.calYear++;}
+  if (state.calMonth<0){state.calMonth=11;state.calYear--;}
+  renderCal();
+}
+function calSelectDay(y,m,d) {
+  state.calSelected = new Date(y,m,d);
+  renderCal();
+}
+function renderCalWeekdays() {
+  const wds = t('weekdays');
+  document.getElementById('cal-weekdays').innerHTML = wds.map(w=>`<div class="cal-wd">${w}</div>`).join('');
+}
+function renderCal() {
+  const mths = t('months');
+  if (state.lang==='ja') {
+    document.getElementById('cal-title').textContent = `${state.calYear}年 ${mths[state.calMonth]}`;
+  } else {
+    document.getElementById('cal-title').textContent = `${state.calYear}년 ${mths[state.calMonth]}`;
+  }
+  const firstDay = new Date(state.calYear, state.calMonth, 1).getDay();
+  const daysInMonth = new Date(state.calYear, state.calMonth+1, 0).getDate();
+  let html = '';
+  for (let i=0;i<firstDay;i++) html+='<div class="cal-day empty"></div>';
+  for (let d=1;d<=daysInMonth;d++) {
+    const date = new Date(state.calYear, state.calMonth, d);
+    const dow = date.getDay();
+    const isToday = date.getTime()===todayNorm.getTime();
+    const isSel = state.calSelected &&
+      date.getTime()===new Date(state.calSelected.getFullYear(),state.calSelected.getMonth(),state.calSelected.getDate()).getTime();
+    const cls = ['cal-day', dow===0?'sunday':'', dow===6?'saturday':'', isToday?'today':'', isSel?'selected':''].filter(Boolean).join(' ');
+    html+=`<button class="${cls}" onclick="calSelectDay(${state.calYear},${state.calMonth},${d})">${d}</button>`;
+  }
+  document.getElementById('cal-grid').innerHTML = html;
+}
+
+// ── Categories ────────────────────────────────────────
+function renderCatSelector() {
+  document.getElementById('cat-selector').innerHTML = getCats().map(c=>
+    `<button class="cat-chip${state.currentCat===c.id?' active':''}" onclick="selectCat('${c.id}')">${c.label}</button>`
+  ).join('');
+}
+function selectCat(id) { state.currentCat=id; renderCatSelector(); }
+
+// ── Add ───────────────────────────────────────────────
+function addTransaction() {
+  const amt = parseInt(document.getElementById('amount-native').value||'0');
+  if (amt<=0) {
+    const el=document.getElementById('amount-native');
+    el.style.borderColor='var(--r2)';
+    setTimeout(()=>{el.style.borderColor='';},600);
+    showToast(t('toastNoAmt'));
+    return;
+  }
+  const cats = getCats();
+  const cat = cats.find(c=>c.id===state.currentCat)||cats[0];
+  const memo = document.getElementById('memo-input').value.trim()||cat.label;
+  state.txs.unshift({id:Date.now(), who:state.currentWho, amount:amt, cat:cat.id, memo, date:new Date(state.selectedDate).toISOString(), lang:state.lang});
+  document.getElementById('amount-native').value='';
+  document.getElementById('memo-input').value='';
+  save();
+  showToast(t('toastAdded')(fmt(amt)));
+}
+
+// ── Dashboard ─────────────────────────────────────────
+function changeMonth(d) {
+  state.viewMonth+=d;
+  if(state.viewMonth>11){state.viewMonth=0;state.viewYear++;}
+  if(state.viewMonth<0){state.viewMonth=11;state.viewYear--;}
+  renderDash();
+}
+function renderDash() {
+  const mths=t('months');
+  if (state.lang==='ja') {
+    document.getElementById('month-title').textContent=`${state.viewYear}年 ${mths[state.viewMonth]}`;
+  } else {
+    document.getElementById('month-title').textContent=`${state.viewYear}년 ${mths[state.viewMonth]}`;
+  }
+  const txs=state.txs.filter(tx=>{const d=new Date(tx.date);return d.getMonth()===state.viewMonth&&d.getFullYear()===state.viewYear;});
+  const totA=txs.filter(tx=>tx.who==='A').reduce((s,tx)=>s+tx.amount,0);
+  const totB=txs.filter(tx=>tx.who==='B').reduce((s,tx)=>s+tx.amount,0);
+  const total=totA+totB; const half=total/2; const diff=totA-half;
+  const nickA=state.nickA||(state.lang==='ko'?'나':'自分');
+  const nickB=state.nickB||(state.lang==='ko'?'파트너':'パートナー');
+  const pctA=total>0?(totA/total*100):50; const pctB=total>0?(totB/total*100):50;
+  const catSums={};
+  txs.forEach(tx=>{catSums[tx.cat]=(catSums[tx.cat]||0)+tx.amount;});
+  const catRows=Object.entries(catSums).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxCat=catRows.length>0?catRows[0][1]:1;
+
+  let settleText='', settleClass='';
+  if(Math.abs(diff)<100){settleText=t('settleNone');}
+  else if(diff>0){settleText=t('settleAtoB')(nickA,nickB,fmt(diff));settleClass='positive';}
+  else{settleText=t('settleBtoA')(nickA,nickB,fmt(-diff));settleClass='negative';}
+
+  const cats=getCats();
+  document.getElementById('dash-content').innerHTML = txs.length===0
+    ? `<div class="empty-state">${t('emptyDash').replace('\n','<br>')}</div>`
+    : `<div class="summary-card">
+        <div class="balance-row">
+          <div class="person-stat"><div class="person-dot dot-a"></div><div class="person-name">${t('paidBy')(nickA)}</div><div class="person-amount">${fmt(totA)}</div></div>
+          <div class="divider-v"></div>
+          <div class="person-stat"><div class="person-dot dot-b"></div><div class="person-name">${t('paidBy')(nickB)}</div><div class="person-amount">${fmt(totB)}</div></div>
+        </div>
+        <div class="settle-box"><div class="settle-label">${t('settleResult')}</div><div class="settle-amount ${settleClass}">${settleText}</div></div>
+      </div>
+      <div class="bar-section">
+        <div class="bar-label"><span>🟢 ${nickA} ${Math.round(pctA)}%</span><span>${Math.round(pctB)}% ${nickB} 🟡</span></div>
+        <div class="bar-track"><div class="bar-fill-a" style="width:${pctA}%"></div><div class="bar-fill-b" style="width:${pctB}%"></div></div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">${t('totalSpend')}</div><div class="metric-val">${fmt(total)}</div></div>
+        <div class="metric"><div class="metric-label">${t('perPerson')}</div><div class="metric-val">${fmt(half)}</div></div>
+        <div class="metric"><div class="metric-label">${t('txCountStat')}</div><div class="metric-val">${txs.length}${t('txCountSuffix')}</div></div>
+        <div class="metric"><div class="metric-label">${t('avgPerTx')}</div><div class="metric-val">${fmt(txs.length>0?total/txs.length:0)}</div></div>
+      </div>
+      ${catRows.length>0?`<div class="section-title">${t('catBreakdown')}</div>
+      <div class="cat-breakdown">${catRows.map(([catId,amt])=>{
+        const cat=cats.find(c=>c.id===catId)||{icon:'📦',label:catId,color:'#eee'};
+        return `<div class="cat-row"><div class="tx-icon" style="background:${cat.color||'#eee'}">${cat.icon||'📦'}</div><span style="font-size:14px;color:var(--t1);flex:1">${cat.label}</span><div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:${Math.round(amt/maxCat*100)}%"></div></div><span class="cat-amt">${fmt(amt)}</span></div>`;
+      }).join('')}</div>`:''}`;
+}
+
+// ── History ───────────────────────────────────────────
+function renderHist() {
+  const nickA=state.nickA||(state.lang==='ko'?'나':'自分');
+  const nickB=state.nickB||(state.lang==='ko'?'파트너':'パートナー');
+  const cats=getCats();
+  const filters=[{id:'all',label:t('filterAll')},{id:'A',label:nickA},{id:'B',label:nickB},...cats.map(c=>({id:'cat_'+c.id,label:c.label}))];
+  document.getElementById('filter-bar').innerHTML=filters.map(f=>`<button class="filter-chip${state.histFilter===f.id?' active':''}" onclick="setFilter('${f.id}')">${f.label}</button>`).join('');
+  let txs=[...state.txs];
+  if(state.histFilter==='A') txs=txs.filter(t=>t.who==='A');
+  else if(state.histFilter==='B') txs=txs.filter(t=>t.who==='B');
+  else if(state.histFilter.startsWith('cat_')) txs=txs.filter(t=>t.cat===state.histFilter.slice(4));
+  const el=document.getElementById('tx-list');
+  if(txs.length===0){el.innerHTML=`<div class="empty-state">${t('emptyHist').replace('\n','<br>')}</div>`;return;}
+  const groups={};
+  txs.forEach(tx=>{const d=new Date(tx.date);const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;if(!groups[key])groups[key]=[];groups[key].push(tx);});
+  el.innerHTML=Object.entries(groups).sort((a,b)=>b[0].localeCompare(a[0])).map(([date,items])=>{
+    const d=new Date(date+'T00:00:00');
+    const label=state.lang==='ja'?`${d.getMonth()+1}月${d.getDate()}日`:`${d.getMonth()+1}월 ${d.getDate()}일`;
+    const dayTotal=items.reduce((s,tx)=>s+tx.amount,0);
+    const rows=items.map(tx=>{
+      const cat=cats.find(c=>c.id===tx.cat)||{icon:'📦',label:'기타',color:'#eee'};
+      const nick=tx.who==='A'?nickA:nickB;
+      const badge=tx.who==='A'?'badge-a':'badge-b';
+      return `<div class="tx-item"><div class="tx-icon" style="background:${cat.color||'#eee'}">${cat.icon||'📦'}</div><div class="tx-body"><div class="tx-top"><span class="tx-memo">${tx.memo}</span><span class="tx-amount">${fmt(tx.amount)}</span></div><div class="tx-bot"><span class="tx-meta">${cat.label}</span><span class="tx-badge ${badge}">${nick}</span></div></div></div>`;
+    }).join('');
+    return `<div class="date-header">${label} · ${fmt(dayTotal)}</div>${rows}`;
+  }).join('');
+}
+function setFilter(f){state.histFilter=f;renderHist();}
+
+// ── Settings ──────────────────────────────────────────
+function renderSettings() {
+  const cats=getCats();
+  document.getElementById('nick-a').value=state.nickA||(state.lang==='ko'?'나':'自分');
+  document.getElementById('nick-b').value=state.nickB||(state.lang==='ko'?'파트너':'パートナー');
+  document.getElementById('tx-count').textContent=state.txs.length+t('txCountSuffix');
+  document.getElementById('cat-manage').innerHTML=cats.map(c=>`<div class="cat-tag">${c.label} <button class="cat-del" onclick="delCat('${c.id}')">×</button></div>`).join('');
+  applyI18n();
+}
+function saveNick(){
+  state.nickA=document.getElementById('nick-a').value;
+  state.nickB=document.getElementById('nick-b').value;
+  save(); setWho(state.currentWho);
+}
+function addCat(){
+  const emoji=document.getElementById('new-cat-emoji').value.trim()||'🏷';
+  const name=document.getElementById('new-cat-input').value.trim();
+  if(!name)return;
+  const colors=['#E1F5EE','#E6F1FB','#EAF3DE','#FAEEDA','#FBEAF0','#F1EFE8','#EEEDFE'];
+  const entry={id:'cat_'+Date.now(),label:emoji+' '+name,icon:emoji,color:colors[(getCats().length)%colors.length]};
+  state.catsKo.push({...entry});
+  state.catsJa.push({...entry});
+  document.getElementById('new-cat-emoji').value='';
+  document.getElementById('new-cat-input').value='';
+  save(); renderSettings(); renderCatSelector();
+  showToast(t('toastCatAdded'));
+}
+function delCat(id){
+  if(getCats().length<=1){showToast(t('toastCatMin'));return;}
+  state.catsKo=state.catsKo.filter(c=>c.id!==id);
+  state.catsJa=state.catsJa.filter(c=>c.id!==id);
+  if(state.currentCat===id) state.currentCat=getCats()[0].id;
+  save(); renderSettings(); renderCatSelector();
+}
+function clearData(){
+  if(!confirm(t('confirmClear')))return;
+  state.txs=[]; save(); renderSettings();
+  showToast(t('toastCleared'));
+}
+
+// ── Navigation ────────────────────────────────────────
+function showScreen(s){
+  ['add','dash','hist','settings'].forEach(id=>{
+    document.getElementById('screen-'+id).classList.toggle('active',id===s);
+    document.getElementById('nav-'+id).classList.toggle('active',id===s);
+  });
+  if(s==='dash') renderDash();
+  if(s==='hist') renderHist();
+  if(s==='settings') renderSettings();
+}
+
+// ── Init ──────────────────────────────────────────────
+function init(){
+  setLang(state.lang);
+  renderCatSelector();
+  setWho(state.currentWho);
+  updateDateDisplay();
+  renderCalWeekdays();
+}
+init();
+</script>
+</body>
+</html>
