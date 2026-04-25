@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>커플 가계부 / カップル家計簿</title>
+<title>カップル家計簿</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -117,12 +117,16 @@
   .cal-day.sunday { color: #E24B4A; }
   .cal-day.saturday { color: #378ADD; }
   .cal-day.selected.sunday, .cal-day.selected.saturday { color: white !important; }
-  .cal-confirm { width: 100%; margin-top: 14px; padding: 14px; background: var(--p3); border: none; border-radius: var(--brad-lg); color: white; font-size: 15px; font-weight: 600; font-family: var(--font); cursor: pointer; }
+
 
   /* Dashboard */
-  .month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-top: 8px; }
-  .month-nav h2 { font-size: 17px; font-weight: 600; color: var(--t1); }
-  .mnav-btn { background: var(--bg); border: 0.5px solid var(--br); border-radius: var(--brad-md); padding: 8px 14px; cursor: pointer; color: var(--t2); font-family: var(--font); font-size: 13px; }
+
+  .settle-hero { background: var(--bg); border-radius: var(--brad-xl); padding: 24px 18px; margin-bottom: 12px; border: 0.5px solid var(--br); text-align: center; }
+  .settle-hero-label { font-size: 12px; color: var(--t3); margin-bottom: 8px; font-weight: 500; }
+  .settle-hero-amount { font-size: 38px; font-weight: 700; letter-spacing: -1px; margin-bottom: 6px; color: var(--t1); }
+  .settle-hero-amount.positive { color: var(--p3); }
+  .settle-hero-amount.negative { color: var(--r2); }
+  .settle-hero-sub { font-size: 13px; color: var(--t2); line-height: 1.5; }
   .summary-card { background: var(--bg); border-radius: var(--brad-xl); padding: 18px; margin-bottom: 12px; border: 0.5px solid var(--br); }
   .balance-row { display: flex; justify-content: space-between; align-items: center; }
   .person-stat { text-align: center; flex: 1; }
@@ -216,33 +220,33 @@
   <!-- Loading -->
   <div class="loading-screen" id="loading-screen">
     <div class="loading-spinner"></div>
-    <div class="loading-text" id="loading-text">연결 중...</div>
+    <div class="loading-text" id="loading-text">接続中...</div>
   </div>
 
   <!-- Room setup -->
   <div class="room-overlay hidden" id="room-overlay">
     <div class="room-card">
-      <h2>💑 커플 가계부</h2>
-      <p id="room-desc">처음 사용하시나요?<br>방을 만들거나 파트너 코드로 참여하세요</p>
-      <button class="room-btn-create" onclick="createRoom()" id="btn-create">✨ 새 방 만들기</button>
-      <div class="room-divider"><hr><span id="room-or">또는</span><hr></div>
-      <input class="room-input" id="room-code-input" placeholder="XXXX" maxlength="6">
-      <button class="room-btn-join" onclick="joinRoom()" id="btn-join">참여하기</button>
+      
+      <p id="room-desc">ルームを作るか、パートナーのコードで参加してください</p>
+      <button class="room-btn-create" onclick="createRoom()" id="btn-create">✨ 新しいルームを作る</button>
+      <div class="room-divider"><hr><span id="room-or">または</span><hr></div>
+      <input class="room-input" id="room-code-input" placeholder="コードを入力" maxlength="6">
+      <button class="room-btn-join" onclick="joinRoom()" id="btn-join">参加する</button>
     </div>
   </div>
 
   <!-- Sync bar -->
   <div class="sync-bar">
     <div class="sync-dot" id="sync-dot"></div>
-    <span class="sync-label" id="sync-label">연결 중...</span>
+    <span class="sync-label" id="sync-label">接続中...</span>
     <span class="room-code" id="room-code-display" onclick="copyRoomCode()"></span>
   </div>
 
   <!-- Lang bar -->
   <div class="lang-bar">
     <div class="lang-toggle">
-      <button class="lang-btn active" id="lang-ko" onclick="setLang('ko')">한국어</button>
-      <button class="lang-btn" id="lang-ja" onclick="setLang('ja')">日本語</button>
+      <button class="lang-btn" id="lang-ko" onclick="setLang('ko')">한국어</button>
+      <button class="lang-btn active" id="lang-ja" onclick="setLang('ja')">日本語</button>
     </div>
   </div>
 
@@ -286,16 +290,14 @@
         </div>
         <div class="cal-weekdays" id="cal-weekdays"></div>
         <div class="cal-grid" id="cal-grid"></div>
-        <button class="cal-confirm" onclick="confirmDate()" data-i18n="calConfirm">선택 완료</button>
+        
       </div>
     </div>
 
     <!-- DASHBOARD -->
     <div id="screen-dash" class="screen">
-      <div class="month-nav">
-        <button class="mnav-btn" onclick="changeMonth(-1)" data-i18n="prevMonth">← 이전</button>
-        <h2 id="month-title"></h2>
-        <button class="mnav-btn" onclick="changeMonth(1)" data-i18n="nextMonth">다음 →</button>
+      <div style="padding-top:8px;margin-bottom:16px;">
+        <h2 id="dash-main-title" style="font-size:20px;font-weight:600;color:var(--t1)"></h2>
       </div>
       <div id="dash-content"></div>
     </div>
@@ -370,19 +372,19 @@
   <nav class="nav">
     <button class="nav-btn active" onclick="showScreen('add')" id="nav-add">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-      <span data-i18n="navAdd">추가</span>
+      <span data-i18n="navAdd">追加</span>
     </button>
     <button class="nav-btn" onclick="showScreen('dash')" id="nav-dash">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      <span data-i18n="navDash">대시보드</span>
+      <span data-i18n="navDash">ダッシュボード</span>
     </button>
     <button class="nav-btn" onclick="showScreen('hist')" id="nav-hist">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>
-      <span data-i18n="navHist">내역</span>
+      <span data-i18n="navHist">履歴</span>
     </button>
     <button class="nav-btn" onclick="showScreen('settings')" id="nav-settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l-.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      <span data-i18n="navSettings">설정</span>
+      <span data-i18n="navSettings">設定</span>
     </button>
   </nav>
 </div>
@@ -521,7 +523,7 @@ const todayD = new Date();
 const todayNorm = new Date(todayD.getFullYear(), todayD.getMonth(), todayD.getDate());
 
 let state = {
-  lang: localStorage.getItem('cl_lang') || 'ko',
+  lang: localStorage.getItem('cl_lang') || 'ja',
   roomCode: localStorage.getItem('cl_room') || null,
   txs: [],
   catsKo: JSON.parse(JSON.stringify(CATS_KO)),
@@ -741,7 +743,12 @@ window.calMove = function(d) {
   if(state.calMonth<0){state.calMonth=11;state.calYear--;}
   renderCal();
 };
-window.calSelectDay = function(y,m,d) { state.calSelected=new Date(y,m,d); renderCal(); };
+window.calSelectDay = function(y,m,d) {
+  state.calSelected = new Date(y,m,d);
+  state.selectedDate = new Date(y,m,d);
+  updateDateDisplay();
+  closeCal();
+};
 function renderCalWeekdays() {
   document.getElementById('cal-weekdays').innerHTML = t('weekdays').map(w=>`<div class="cal-wd">${w}</div>`).join('');
 }
@@ -795,79 +802,118 @@ window.addTransaction = async function() {
 };
 
 // ── Dashboard ─────────────────────────────────────────
-window.changeMonth = function(d) {
-  state.viewMonth+=d;
-  if(state.viewMonth>11){state.viewMonth=0;state.viewYear++;}
-  if(state.viewMonth<0){state.viewMonth=11;state.viewYear--;}
-  renderDash();
-};
+
 function renderDash() {
-  const mths=t('months');
-  document.getElementById('month-title').textContent = state.lang==='ja'
-    ? `${state.viewYear}年 ${mths[state.viewMonth]}`
-    : `${state.viewYear}년 ${mths[state.viewMonth]}`;
-  const txs=state.txs.filter(tx=>{const d=new Date(tx.date);return d.getMonth()===state.viewMonth&&d.getFullYear()===state.viewYear;});
-  const totA=txs.filter(tx=>tx.who==='A').reduce((s,tx)=>s+tx.amount,0);
-  const totB=txs.filter(tx=>tx.who==='B').reduce((s,tx)=>s+tx.amount,0);
-  const total=totA+totB; const half=total/2; const diff=totA-half;
-  const nickA=state.nickA||(state.lang==='ko'?'나':'自分');
-  const nickB=state.nickB||(state.lang==='ko'?'파트너':'パートナー');
-  const pctA=total>0?(totA/total*100):50; const pctB=total>0?(totB/total*100):50;
+  // title
+  const titleEl = document.getElementById('dash-main-title');
+  if (titleEl) titleEl.textContent = state.lang==='ja' ? '収支サマリー' : '전체 정산';
+
+  const txs = state.txs; // ALL transactions, no month filter
+  const totA = txs.filter(tx=>tx.who==='A').reduce((s,tx)=>s+tx.amount,0);
+  const totB = txs.filter(tx=>tx.who==='B').reduce((s,tx)=>s+tx.amount,0);
+  const total = totA+totB;
+  const half = total/2;
+  const diff = totA-half; // positive = A paid more = B owes A
+  const nickA = state.nickA||(state.lang==='ko'?'나':'自分');
+  const nickB = state.nickB||(state.lang==='ko'?'파트너':'パートナー');
+  const pctA = total>0?(totA/total*100):50;
+  const pctB = total>0?(totB/total*100):50;
+
   const catSums={};
   txs.forEach(tx=>{catSums[tx.cat]=(catSums[tx.cat]||0)+tx.amount;});
-  const catRows=Object.entries(catSums).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const catRows=Object.entries(catSums).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const maxCat=catRows.length>0?catRows[0][1]:1;
-  let settleText='', settleClass='';
-  if(Math.abs(diff)<100) settleText=t('settleNone');
-  else if(diff>0){settleText=t('settleAtoB')(nickA,nickB,fmt(diff));settleClass='positive';}
-  else{settleText=t('settleBtoA')(nickA,nickB,fmt(-diff));settleClass='negative';}
+
+  let settleText='', settleClass='', settleSubText='';
+  if(Math.abs(diff)<100){
+    settleText = state.lang==='ja' ? '精算なし' : '정산 없음';
+    settleSubText = state.lang==='ja' ? '均等に分担できています' : '균등하게 분담되고 있어요';
+  } else if(diff>0){
+    settleText = fmt(diff);
+    settleSubText = state.lang==='ja' ? `${nickB}が${nickA}に支払う累計金額` : `${nickB}가 ${nickA}에게 보낼 누적 금액`;
+    settleClass='positive';
+  } else {
+    settleText = fmt(-diff);
+    settleSubText = state.lang==='ja' ? `${nickA}が${nickB}に支払う累計金額` : `${nickA}가 ${nickB}에게 보낼 누적 금액`;
+    settleClass='negative';
+  }
+
   const cats=getCats();
+
+  // monthly breakdown
+  const monthMap={};
+  txs.forEach(tx=>{
+    const d=new Date(tx.date);
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if(!monthMap[key]) monthMap[key]={A:0,B:0};
+    monthMap[key][tx.who]+=tx.amount;
+  });
+  const monthRows=Object.entries(monthMap).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,6);
+
   document.getElementById('dash-content').innerHTML = txs.length===0
-    ? `<div class="empty-state">${t('emptyDash').replace('\n','<br>')}</div>`
-    : `<div class="summary-card"><div class="balance-row">
+    ? `<div class="empty-state">${(state.lang==='ja'?'取引がまだありません\n支出追加タブから入力してください ✍️':'거래 내역이 없어요\n지출 추가 탭에서 내역을 추가해보세요 ✍️').replace('\n','<br>')}</div>`
+    : `
+    <!-- Big settle card -->
+    <div class="settle-hero">
+      <div class="settle-hero-label">${state.lang==='ja'?'累計精算額':'누적 정산 금액'}</div>
+      <div class="settle-hero-amount ${settleClass}">${settleText}</div>
+      <div class="settle-hero-sub">${settleSubText}</div>
+    </div>
+
+    <!-- Who paid what -->
+    <div class="summary-card">
+      <div class="balance-row">
         <div class="person-stat"><div class="person-dot dot-a"></div><div class="person-name">${t('paidBy')(nickA)}</div><div class="person-amount">${fmt(totA)}</div></div>
         <div class="divider-v"></div>
         <div class="person-stat"><div class="person-dot dot-b"></div><div class="person-name">${t('paidBy')(nickB)}</div><div class="person-amount">${fmt(totB)}</div></div>
-      </div><div class="settle-box"><div class="settle-label">${t('settleResult')}</div><div class="settle-amount ${settleClass}">${settleText}</div></div></div>
-      <div class="bar-section"><div class="bar-label"><span>🟢 ${nickA} ${Math.round(pctA)}%</span><span>${Math.round(pctB)}% ${nickB} 🟡</span></div>
-      <div class="bar-track"><div class="bar-fill-a" style="width:${pctA}%"></div><div class="bar-fill-b" style="width:${pctB}%"></div></div></div>
-      <div class="metrics">
-        <div class="metric"><div class="metric-label">${t('totalSpend')}</div><div class="metric-val">${fmt(total)}</div></div>
-        <div class="metric"><div class="metric-label">${t('perPerson')}</div><div class="metric-val">${fmt(half)}</div></div>
-        <div class="metric"><div class="metric-label">${t('txCountStat')}</div><div class="metric-val">${txs.length}${t('txCountSuffix')}</div></div>
-        <div class="metric"><div class="metric-label">${t('avgPerTx')}</div><div class="metric-val">${fmt(txs.length>0?total/txs.length:0)}</div></div>
       </div>
-      ${catRows.length>0?`<div class="section-title">${t('catBreakdown')}</div><div class="cat-breakdown">${catRows.map(([catId,amt])=>{const cat=cats.find(c=>c.id===catId)||{icon:'📦',label:catId,color:'#eee'};return `<div class="cat-row"><div class="tx-icon" style="background:${cat.color||'#eee'}">${cat.icon||'📦'}</div><span style="font-size:14px;color:var(--t1);flex:1">${cat.label}</span><div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:${Math.round(amt/maxCat*100)}%"></div></div><span class="cat-amt">${fmt(amt)}</span></div>`;}).join('')}</div>`:''}`;
+    </div>
+
+    <!-- Bar -->
+    <div class="bar-section">
+      <div class="bar-label"><span>🟢 ${nickA} ${Math.round(pctA)}%</span><span>${Math.round(pctB)}% ${nickB} 🟡</span></div>
+      <div class="bar-track"><div class="bar-fill-a" style="width:${pctA}%"></div><div class="bar-fill-b" style="width:${pctB}%"></div></div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">${t('totalSpend')}</div><div class="metric-val">${fmt(total)}</div></div>
+      <div class="metric"><div class="metric-label">${t('perPerson')}</div><div class="metric-val">${fmt(half)}</div></div>
+      <div class="metric"><div class="metric-label">${t('txCountStat')}</div><div class="metric-val">${txs.length}${t('txCountSuffix')}</div></div>
+      <div class="metric"><div class="metric-label">${t('avgPerTx')}</div><div class="metric-val">${fmt(txs.length>0?total/txs.length:0)}</div></div>
+    </div>
+
+    <!-- Monthly breakdown -->
+    ${monthRows.length>0?`
+    <div class="section-title">${state.lang==='ja'?'月別内訳':'월별 내역'}</div>
+    <div class="cat-breakdown">
+      ${monthRows.map(([ym,v])=>{
+        const [y,m]=ym.split('-');
+        const label=state.lang==='ja'?`${y}年${parseInt(m)}月`:`${y}년 ${parseInt(m)}월`;
+        const mTotal=(v.A||0)+(v.B||0);
+        const mDiff=(v.A||0)-(mTotal/2);
+        let arrow='', arrowColor='var(--t3)';
+        if(Math.abs(mDiff)>=100){
+          arrow=mDiff>0?`▲ ${fmt(mDiff)}`:`▼ ${fmt(-mDiff)}`;
+          arrowColor=mDiff>0?'var(--p3)':'var(--r2)';
+        }
+        return `<div class="cat-row">
+          <span style="font-size:14px;color:var(--t1);flex:1;font-weight:500">${label}</span>
+          <span style="font-size:12px;color:var(--t3);margin-right:8px">${fmt(mTotal)}</span>
+          <span style="font-size:12px;font-weight:600;color:${arrowColor}">${arrow||'±0'}</span>
+        </div>`;
+      }).join('')}
+    </div>`:'' }
+
+    <!-- Cat breakdown -->
+    ${catRows.length>0?`<div class="section-title">${t('catBreakdown')}</div>
+    <div class="cat-breakdown">${catRows.map(([catId,amt])=>{
+      const cat=cats.find(c=>c.id===catId)||{icon:'📦',label:catId,color:'#eee'};
+      return `<div class="cat-row"><div class="tx-icon" style="background:${cat.color||'#eee'}">${cat.icon||'📦'}</div><span style="font-size:14px;color:var(--t1);flex:1">${cat.label}</span><div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:${Math.round(amt/maxCat*100)}%"></div></div><span class="cat-amt">${fmt(amt)}</span></div>`;
+    }).join('')}</div>`:''}
+  `;
 }
 
-// ── History ───────────────────────────────────────────
-function renderHist() {
-  const nickA=state.nickA||(state.lang==='ko'?'나':'自分');
-  const nickB=state.nickB||(state.lang==='ko'?'파트너':'パートナー');
-  const cats=getCats();
-  const filters=[{id:'all',label:t('filterAll')},{id:'A',label:nickA},{id:'B',label:nickB},...cats.map(c=>({id:'cat_'+c.id,label:c.label}))];
-  document.getElementById('filter-bar').innerHTML=filters.map(f=>`<button class="filter-chip${state.histFilter===f.id?' active':''}" onclick="setFilter('${f.id}')">${f.label}</button>`).join('');
-  let txs=[...state.txs];
-  if(state.histFilter==='A') txs=txs.filter(tx=>tx.who==='A');
-  else if(state.histFilter==='B') txs=txs.filter(tx=>tx.who==='B');
-  else if(state.histFilter.startsWith('cat_')) txs=txs.filter(tx=>tx.cat===state.histFilter.slice(4));
-  const el=document.getElementById('tx-list');
-  if(txs.length===0){el.innerHTML=`<div class="empty-state">${t('emptyHist').replace('\n','<br>')}</div>`;return;}
-  const groups={};
-  txs.forEach(tx=>{const d=new Date(tx.date);const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;if(!groups[key])groups[key]=[];groups[key].push(tx);});
-  el.innerHTML=Object.entries(groups).sort((a,b)=>b[0].localeCompare(a[0])).map(([date,items])=>{
-    const d=new Date(date+'T00:00:00');
-    const label=state.lang==='ja'?`${d.getMonth()+1}月${d.getDate()}日`:`${d.getMonth()+1}월 ${d.getDate()}일`;
-    const dayTotal=items.reduce((s,tx)=>s+tx.amount,0);
-    const rows=items.map(tx=>{
-      const cat=cats.find(c=>c.id===tx.cat)||{icon:'📦',label:'기타',color:'#eee'};
-      const nick=tx.who==='A'?nickA:nickB;
-      const badge=tx.who==='A'?'badge-a':'badge-b';
-      return `<div class="tx-item"><div class="tx-icon" style="background:${cat.color||'#eee'}">${cat.icon||'📦'}</div><div class="tx-body"><div class="tx-top"><span class="tx-memo">${tx.memo}</span><span class="tx-amount">${fmt(tx.amount)}</span></div><div class="tx-bot"><span class="tx-meta">${cat.label}</span><span class="tx-badge ${badge}">${nick}</span></div></div></div>`;
-    }).join('');
-    return `<div class="date-header">${label} · ${fmt(dayTotal)}</div>${rows}`;
-  }).join('');
-}
 window.setFilter = function(f){state.histFilter=f;renderHist();};
 
 // ── Settings ──────────────────────────────────────────
