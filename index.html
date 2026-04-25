@@ -831,11 +831,11 @@ function renderDash() {
   } else if(diff>0){
     settleText = fmt(diff);
     settleSubText = state.lang==='ja' ? `${nickB}が${nickA}に支払う累計金額` : `${nickB}가 ${nickA}에게 보낼 누적 금액`;
-    settleClass='positive';
+    settleClass='negative';
   } else {
     settleText = fmt(-diff);
     settleSubText = state.lang==='ja' ? `${nickA}が${nickB}に支払う累計金額` : `${nickA}가 ${nickB}에게 보낼 누적 금액`;
-    settleClass='negative';
+    settleClass='positive';
   }
 
   const cats=getCats();
